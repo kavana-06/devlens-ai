@@ -7,6 +7,12 @@ def test_build_dependency_graph(tmp_path: Path):
     services_directory = tmp_path / "services"
     services_directory.mkdir()
 
+    repositories_directory = tmp_path / "repositories"
+    repositories_directory.mkdir()
+
+    models_directory = tmp_path / "models"
+    models_directory.mkdir()
+
     user_service = services_directory / "user_service.py"
 
     user_service.write_text(
@@ -20,14 +26,11 @@ class UserService:
 """
     )
 
-    repository_directory = tmp_path / "repositories"
-    repository_directory.mkdir()
-
-    user_repository = repository_directory / "user_repository.py"
+    user_repository = repositories_directory / "user_repository.py"
 
     user_repository.write_text(
         """
-import sqlite3
+from models.user import User
 
 
 class UserRepository:
@@ -35,11 +38,21 @@ class UserRepository:
 """
     )
 
+    user_model = models_directory / "user.py"
+
+    user_model.write_text(
+        """
+class User:
+    pass
+"""
+    )
+
     graph = build_dependency_graph(str(tmp_path))
 
     assert graph == {
+        "models/user.py": [],
         "repositories/user_repository.py": [
-            "sqlite3",
+            "models.user",
         ],
         "services/user_service.py": [
             "repositories.user_repository",
