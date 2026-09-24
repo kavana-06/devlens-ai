@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from analyzer.dependency_graph import build_dependency_graph
+from analyzer.dependency_graph import (
+    build_dependency_graph,
+    find_local_module,
+)
 
 
 def test_build_dependency_graph(tmp_path: Path):
@@ -59,6 +62,36 @@ class User:
             "models.user",
         ],
     }
+
+
+def test_finds_local_python_module(tmp_path: Path):
+    repositories_directory = tmp_path / "repositories"
+    repositories_directory.mkdir()
+
+    user_repository = repositories_directory / "user_repository.py"
+
+    user_repository.write_text(
+        """
+class UserRepository:
+    pass
+"""
+    )
+
+    result = find_local_module(
+        "repositories.user_repository",
+        tmp_path,
+    )
+
+    assert result == user_repository
+
+
+def test_returns_none_for_external_module(tmp_path: Path):
+    result = find_local_module(
+        "sqlite3",
+        tmp_path,
+    )
+
+    assert result is None
 
 
 def test_ignores_virtual_environment(tmp_path: Path):
